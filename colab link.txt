@@ -1,0 +1,5 @@
+//Customer churn Prediction-colab link
+https://colab.research.google.com/drive/1Sj2JH0nHFo7ToxWM8z5ePJYYGpiTfgoK?usp=sharing
+
+//SMS spam detection
+https://colab.research.google.com/drive/12BgCvLgkc1-B5eMbcNkbjVK7lfDvksCh?usp=sharing
