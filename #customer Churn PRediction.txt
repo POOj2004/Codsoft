@@ -1,0 +1,77 @@
+#customer Churn PRediction
+
+# Step 1: Import Libraries
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from xgboost import XGBClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import numpy as np
+
+# Step 2: Load Dataset
+df = pd.read_csv('Churn_Modelling.csv')
+
+# Step 3: Preprocessing
+df = df.drop(columns=['RowNumber', 'CustomerId', 'Surname'])
+
+# Encode Categorical Features
+le_gender = LabelEncoder()
+df['Gender'] = le_gender.fit_transform(df['Gender'])  # Male=1, Female=0
+
+le_geo = LabelEncoder()
+df['Geography'] = le_geo.fit_transform(df['Geography'])  # France=0, Germany=1, Spain=2
+
+# Features and Labels
+X = df.drop('Exited', axis=1)
+y = df['Exited']
+
+# Scale Features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Step 4: Train-Test Split
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+# Step 5: Train Gradient Boosting Model (XGBoost)
+model = XGBClassifier(use_label_encoder=False, eval_metric='logloss')
+model.fit(X_train, y_train)
+
+# Step 6: Evaluate Model
+y_pred = model.predict(X_test)
+print("🔍 Accuracy:", accuracy_score(y_test, y_pred))
+print("📊 Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("📈 Classification Report:\n", classification_report(y_test, y_pred))
+
+# Step 7: Predict on Custom Input
+def predict_custom_input():
+    print("\n🧾 Enter new customer details to predict churn:")
+
+    credit_score = int(input("Credit Score (e.g., 650): "))
+    geography = input("Geography (France, Germany, Spain): ")
+    gender = input("Gender (Male/Female): ")
+    age = int(input("Age: "))
+    tenure = int(input("Tenure (years with bank): "))
+    balance = float(input("Balance amount: "))
+    num_of_products = int(input("Number of Products: "))
+    has_credit_card = int(input("Has Credit Card? (1 = Yes, 0 = No): "))
+    is_active_member = int(input("Is Active Member? (1 = Yes, 0 = No): "))
+    estimated_salary = float(input("Estimated Salary: "))
+
+    # Encode and scale input
+    geo_val = le_geo.transform([geography])[0]
+    gender_val = le_gender.transform([gender])[0]
+
+    input_array = np.array([[credit_score, geo_val, gender_val, age, tenure,
+                             balance, num_of_products, has_credit_card, is_active_member, estimated_salary]])
+
+    input_scaled = scaler.transform(input_array)
+    prediction = model.predict(input_scaled)[0]
+
+    print("\n🔮 Prediction Result:")
+    if prediction == 1:
+        print("❌ Customer is predicted to CHURN.")
+    else:
+        print("✅ Customer is predicted to STAY.")
+
+# Trigger custom input prediction
+predict_custom_input()
