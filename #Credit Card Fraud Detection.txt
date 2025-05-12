@@ -1,0 +1,72 @@
+#Credit Card Fraud Detection
+
+# Step 1: Import Libraries
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from imblearn.over_sampling import SMOTE
+import warnings
+warnings.filterwarnings("ignore")
+
+# Step 2: Load and Sample Dataset for Speed
+df = pd.read_csv("fraudTrain.csv").sample(n=20000, random_state=42)
+
+# Step 3: Clean and Prepare Data
+df = df.dropna(subset=['is_fraud'])
+df['is_fraud'] = df['is_fraud'].astype(int)
+
+drop_cols = ["Unnamed: 0", "trans_date_trans_time", "cc_num", "first", "last",
+             "street", "city", "state", "zip", "job", "dob", "trans_num", "merchant"]
+df.drop(columns=drop_cols, inplace=True, errors='ignore')
+
+df = pd.get_dummies(df, drop_first=True)
+
+X = df.drop("is_fraud", axis=1)
+y = df["is_fraud"]
+
+# Step 4: Scaling and SMOTE
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+smote = SMOTE(random_state=42)
+X_resampled, y_resampled = smote.fit_resample(X_scaled, y)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_resampled, y_resampled, test_size=0.2, random_state=42
+)
+
+# Step 5: Train Random Forest
+rf_model = RandomForestClassifier(n_estimators=50, max_depth=10, n_jobs=-1, random_state=42)
+rf_model.fit(X_train, y_train)
+
+# Step 6: Evaluation
+y_pred = rf_model.predict(X_test)
+
+print("\n----- Random Forest Results -----")
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("Classification Report:\n", classification_report(y_test, y_pred))
+
+# Step 7: Custom Input (Hidden Base Template)
+input_data = X.iloc[0].copy()  # Use as a feature template
+
+# Only override a few selected fields with user input:
+print("\nEnter custom transaction details:")
+
+input_data['amt'] = float(input("Amount (e.g. 75.0): "))
+input_data['lat'] = float(input("Customer latitude (e.g. 45.0): "))
+input_data['long'] = float(input("Customer longitude (e.g. -75.0): "))
+input_data['gender_M'] = int(input("Gender (1 for Male, 0 for Female): "))
+
+# You can add more fields here if needed.
+
+# Scale and predict
+custom_scaled = scaler.transform([input_data])
+prediction = rf_model.predict(custom_scaled)[0]
+
+# Output
+print("\n🔍 Prediction Result:")
+print("⚠️ Fraudulent Transaction" if prediction == 1 else "✅ Legitimate Transaction")
